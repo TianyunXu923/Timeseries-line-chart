@@ -84,6 +84,7 @@
 
     // Get the data    
     d3.json('data.json', function(erro, data){
+      console.log(data)
       data = data.data
       data.forEach(function(d){
         console.log(parseDate(d.target_date))
@@ -164,8 +165,8 @@
     function mousemove() {
       var x0 = x.invert(d3.mouse(this)[0])
           i = bisectDate(data, x0, 1)
-          console.log(x0)
-          console.log(i)
+          // console.log(x0)
+          // console.log(i)
           d0 = data[i-1]
           d1 = data[i]
           if(i!= data.length){

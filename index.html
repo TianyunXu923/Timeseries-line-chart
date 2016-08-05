@@ -43,16 +43,17 @@
       bottom: 30,
       left: 50
     },
-      width = 800 - margin.left - margin.right,
-      height = 300 - margin.top - margin.bottom
+      width = 900 - margin.left - margin.right,
+      height = 200 - margin.top - margin.bottom
 
     // Parse the date/ time  
     var parseDate = d3.time.format('%Y-%m-%dT%H:%M:%S+%M:%S').parse
+        formatDate = d3.time.format('%m/%e (%a)')
         bisectDate = d3.bisector(function(d) {
           return d.target_date
         }).left
 
-      
+
     // Set the ranges
     var x = d3.time.scale().range([0, width-20])
     var y = d3.scale.linear().range([height, 0])
@@ -62,7 +63,7 @@
           .orient('bottom').ticks(5)
 
     var yAxis = d3.svg.axis().scale(y)
-          .orient('left').ticks(5)
+          .orient('left').ticks(10)
 
     // Define the line
     var valueline = d3.svg.line()
@@ -72,19 +73,18 @@
     // Adds the svg canvas
     var svg = d3.select('#chart')
           .append('svg')
-          .attr('width', width+margin.left + margin.right)
-          .attr('height', height + margin.top + margin.bottom)
+          .attr('width', width+margin.left + margin.right+80)
+          .attr('height', height + margin.top + margin.bottom+20)
           .append('g')
-          .attr('transform', 'translate(70'+',' + margin.top+')')
-
-    var lineSvg = svg.append('g')
+          .attr('transform', 'translate(70, 50)')
 
     var focus = svg.append('g')
-                  .style('display', 'none')      
+                  .style('display', 'none')  
+
+    var lineSvg = svg.append('g')    
 
     // Get the data    
     d3.json('data.json', function(erro, data){
-      console.log(data)
       data = data.data
       data.forEach(function(d){
         console.log(parseDate(d.target_date))
@@ -95,33 +95,6 @@
     // scale the range of the data
     x.domain(d3.extent(data, function(d){ return d.target_date}))
     y.domain([0, d3.max(data, function(d) {return d.revenue })])
-
-    // Add the valueline path
-    lineSvg.append('path')
-      .attr('class', 'line')
-      .attr('d', valueline(data))  
-
-    // Add the scatterplot
-    lineSvg.selectAll('dot')
-        .data(data)
-        .enter().append('circle') 
-        .attr('r', 2)
-        .style('fill', 'black')
-        .attr('cx', function(d) { 
-          // console.log(d)
-          return x(d.target_date)})
-        .attr('cy', function(d) { return y(d.revenue)})
-
-    // Add the X Axis
-    svg.append('g')
-      .attr('class', 'x axis')
-      .attr('transform', 'translate(0,'+height+')')
-      .call(xAxis)
-
-    // Add the Y Axis
-    svg.append('g')
-      .attr('class', 'y axis')
-      .call(yAxis) 
 
     // append the x line
     focus.append('line')
@@ -148,6 +121,22 @@
       .style('stroke', 'blue')
       .attr('r', 4)
 
+    // append tooltip
+    focus.append('text')
+      .attr('class', 'tooltips')
+      .style('stroke', 'steelblue')
+      .attr('dx', -50)
+      .attr('dy', '-2em')
+
+    focus.append('rect')
+      .attr('class', 'tooltipRec')
+      .attr('width', 150)
+      .attr('height', 20)
+      .style('fill', 'none')
+      .style('stroke', 'grey')
+      .attr('x', -60)
+      .attr('y', '-3.2em')  
+
     // append the rectangle to capture mouse
     svg.append('rect')
       .attr('width', width)
@@ -155,22 +144,57 @@
       .style('fill', 'none')
       .style('pointer-events', 'all')
       .on('mouseover', function() {
-        focus.style('display', null)
+        focus.style('display', null);
       })  
       .on('mouseout', function() {
-        focus.style('display', 'none')
+        focus.style('display', 'none');
       })
       .on('mousemove', mousemove)
+
+
+
+    // Add the valueline path
+    lineSvg.append('path')
+      .attr('class', 'line')
+      .attr('d', valueline(data)) 
+
+
+    // Add the scatterplot
+    lineSvg.selectAll('dot')
+        .data(data)
+        .enter().append('circle') 
+        .attr('r', 4)
+        .style('stroke', 'steelblue')
+        .style('stroke-width', '2')
+        .style('fill', 'white')
+        .attr('cx', function(d) { 
+          // console.log(d)
+          return x(d.target_date)})
+        .attr('cy', function(d) { return y(d.revenue)})
+
+
+    // Add the X Axis
+    svg.append('g')
+      .attr('class', 'x axis')
+      .attr('transform', 'translate(0,'+height+')')
+      .call(xAxis)
+
+    // Add the Y Axis
+    svg.append('g')
+      .attr('class', 'y axis')
+      .call(yAxis) 
+
+
+    
 
     function mousemove() {
       var x0 = x.invert(d3.mouse(this)[0])
           i = bisectDate(data, x0, 1)
-          // console.log(x0)
-          // console.log(i)
           d0 = data[i-1]
           d1 = data[i]
           if(i!= data.length){
             d = x0 - d0.target_date > d1.target_date - x0 ? d1 : d0
+            // console.log(d)
           }
 
       focus.select('circle.y')
@@ -183,6 +207,13 @@
       focus.select('.y')
           .attr('transform', 'translate('+width*(-1)+','+y(d.revenue)+')')
           .attr('x2', width+width)
+
+      focus.select('text.tooltips')
+          .attr('transform', 'translate('+x(d.target_date)+','+y(d.revenue)+')')    
+          .text(formatDate(d.target_date)+': '+d.revenue)
+
+      focus.select('.tooltipRec')
+          .attr('transform', 'translate('+x(d.target_date)+','+y(d.revenue)+')')
     }
 
 

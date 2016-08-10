@@ -102,6 +102,7 @@
     // Get the data    *****
     d3.json('data.json', function(erro, data){
       data = data.data
+      var dataOriginal = data
       // first day of the selected date range
       var start = parseDate(data[0].target_date)
       data.forEach(function(d){
@@ -150,13 +151,13 @@
       .attr('x1', width)
       .attr('x2', width)   
 
-    // for comparison circle
-    focus.append('circle')
-      .attr('class', 'y2')
-      .style('fill', '#7A95D2')
-      .style('stroke', 'steelblue')  
-      .style('stroke-width', 2)
-      .attr('r', 5)
+    // // for comparison circle
+    // focus.append('circle')
+    //   .attr('class', 'y2')
+    //   .style('fill', '#7A95D2')
+    //   .style('stroke', 'steelblue')  
+    //   .style('stroke-width', 2)
+    //   .attr('r', 5)
 
 
     // append the rectangle to capture mouse 
@@ -193,18 +194,29 @@
       .attr('id', 'originalLine')
       .attr('d', valueline(data)) 
 
+    // Add the scatterplot ***
+    lineSvg.selectAll('dot')
+        .data(data)
+        .enter().append('circle')
+        .attr('id', 'linePoint') 
+        .attr('r', 4)
+        .style('stroke', 'steelblue')
+        .style('stroke-width', '2')
+        .style('fill', 'white')
+        .attr('cx', function(d) { 
+          return x(d.target_date)})
+        .attr('cy', function(d) { return y(d.revenue)})
+
     // for comparison x input
     d3.json('data2.json', function(erro, data) {
       data2 = data.data
       // first day of compared dataset
       var compareFirstDay = parseDate(data2[0].target_date)
       var differenceDay = d3.timeDay.count(compareFirstDay, start)
-      // console.log(differenceDay)
 
       // in data3, it stores dataset with updated date
       var data3 = {'data':[], 'summary': []}
       data2.forEach(function(d){
-        // console.log(parseDate(d.target_date))
         d.target_date = parseDate(d.target_date)
         d.revenue = Number(d.revenue)
         var updateDate = d3.timeDay.offset(d.target_date, differenceDay)
@@ -227,6 +239,26 @@
         .attr('id', 'updateYAxis')
         .call(yAxis) 
 
+        svg.selectAll('#originalLine').remove()
+        // Add the valueline path ***
+        lineSvg.append('path')
+          .attr('class', 'line')
+          .attr('id', 'updateLine')
+          .attr('d', valueline(dataOriginal)) 
+
+        svg.selectAll('#linePoint').remove()
+          // Add the scatterplot ***
+        lineSvg.selectAll('dot')
+          .data(dataOriginal)
+          .enter().append('circle')
+          .attr('id', 'linePoint') 
+          .attr('r', 4)
+          .style('stroke', 'steelblue')
+          .style('stroke-width', '2')
+          .style('fill', 'white')
+          .attr('cx', function(d) { return x(d.target_date)})
+          .attr('cy', function(d) { return y(d.revenue)})  
+
       } else return null
 
       comparelineSvg.append('path')
@@ -240,27 +272,12 @@
         .style('stroke', 'grey')
         .style('stroke-width', '2')
         .style('fill', 'white')
-        .attr('cx', function(d) { 
-          // console.log(d)
-          return x(d.chartDate)})
+        .attr('cx', function(d) { return x(d.chartDate)})
         .attr('cy', function(d) { return y(d.revenue)})
 
     })    
   
-    // Add the scatterplot ***
-    lineSvg.selectAll('dot')
-        .data(data)
-        .enter().append('circle') 
-        .attr('r', 4)
-        .style('stroke', 'steelblue')
-        .style('stroke-width', '2')
-        .style('fill', 'white')
-        .attr('cx', function(d) { 
-          // console.log(d)
-          return x(d.target_date)})
-        .attr('cy', function(d) { return y(d.revenue)})
-
-
+  
     // append tooltip ***
     focus.append('rect')
       .attr('class', 'tooltipRec')
@@ -291,12 +308,15 @@
           .attr('transform', 'translate('+x(d.target_date)+','+y(d.revenue)+')')
 
       focus.select('.x')
-          .attr('transform', 'translate('+x(d.target_date)+','+y(d.revenue)+')')
-          .attr('y2', height-y(d.revenue))
+          .attr('transform', 'translate('+x(d.target_date)+',0)')
 
       focus.select('.y')
           .attr('transform', 'translate('+width*(-1)+','+y(d.revenue)+')')
           .attr('x2', width+width)
+
+      focus.select('.y2')
+          .attr('transform', 'translate('+width*(-1)+','+y(d.revenue)+')')
+          .attr('x2', width+width)    
 
       focus.select('text.tooltips')
           .attr('transform', 'translate('+x(d.target_date)+','+y(d.revenue)+')')    
@@ -306,16 +326,6 @@
           .attr('transform', 'translate('+x(d.target_date)+','+y(d.revenue)+')')
     }
 
-    })
-
-
-  
-
-
-  // second dataset
-  d3.json('data2.json', function(error, data) {
-
-      
     })
 
   </script>
